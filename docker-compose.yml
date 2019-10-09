@@ -1,0 +1,51 @@
+version: "3.7"
+
+services:
+  db:
+    image: postgres:11-alpine
+    env_file:
+      - .env
+    volumes:
+      - satellity_data:/var/lib/postgresql/data
+      - ./internal/models/schema.sql:/schema.sql:ro
+  # db_migration:
+  #   image: postgres:11-alpine
+  #   command: psql -h db -U satellity satellity_dev < schema.sql
+  #   env_file:
+  #     - .env    
+  #   volumes:
+  #     - ./internal/models/schema.sql:/schema.sql:ro
+  api:
+    build: .
+    volumes:
+      - $PWD:/api
+    depends_on:
+      - db
+    ports:
+      - 4000:4000
+    # restart: always
+  app:
+    build:
+      context: web/
+    command: run dev
+    volumes:
+      # - /opt/share/rubygems/:/bundle_path
+      - ./web:/app
+    depends_on:
+      - db
+      - api
+    ports:
+      - 1234:1234
+    # restart: always
+  # nginx:
+  #   image: nginx:alpine
+  #   volumes:
+  #     - .docker/nginx/app.conf:/etc/nginx/conf.d/default.conf
+  #   ports:
+  #     - 80:80 #sudo setcap cap_net_bind_service=+ep `which docker-compose`
+  #   depends_on:
+  #     - app
+
+volumes:
+  satellity_data:
+    
